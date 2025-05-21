@@ -15,10 +15,12 @@ export default function LeadFormModal({
   open,
   onClose,
   onSuccess,
+  defaultStage,
 }: {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  defaultStage?: string | null;
 }) {
   const [form, setForm] = useState({
     name: "",
@@ -27,11 +29,17 @@ export default function LeadFormModal({
     linkedIn: "",
     notes: "",
     tags: "",
-    stage: "NEW",
+    stage: defaultStage || "NEW",
     nextFollowUp: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  React.useEffect(() => {
+    if (open && defaultStage) {
+      setForm((prev) => ({ ...prev, stage: defaultStage }));
+    }
+  }, [defaultStage, open]);
 
   if (!open) return null;
 
@@ -181,19 +189,31 @@ export default function LeadFormModal({
           </div>
           <div>
             <label className="block font-semibold">Stage</label>
-            <select
-              name="stage"
-              value={form.stage}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2"
-              required
-            >
-              {stages.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
+            {defaultStage ? (
+              <input
+                type="text"
+                value={
+                  stages.find((s) => s.value === form.stage)?.label ||
+                  form.stage
+                }
+                disabled
+                className="w-full border rounded px-3 py-2 bg-gray-100 text-gray-700 cursor-not-allowed"
+              />
+            ) : (
+              <select
+                name="stage"
+                value={form.stage}
+                onChange={handleChange}
+                className="w-full border rounded px-3 py-2"
+                required
+              >
+                {stages.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
           <div>
             <label className="block font-semibold">Next Follow Up</label>

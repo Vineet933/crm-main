@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import LeadFormModal from "./LeadFormModal";
 import { useRouter } from "next/navigation";
+import NotificationDropdown from "./NotificationDropdown";
+import ProfileDropdown from "./ProfileDropdown";
+import { Linkedin } from "lucide-react";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 const stages = [
   { key: "NEW", label: "New", color: "bg-blue-100", border: "border-blue-200" },
@@ -21,6 +25,7 @@ const stages = [
 
 export default function LeadPipeline() {
   const [showAddModal, setShowAddModal] = useState(false);
+  const [addStage, setAddStage] = useState<string | null>(null);
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -43,10 +48,55 @@ export default function LeadPipeline() {
     fetchLeads();
   }, []);
 
-  // Refresh leads after adding
   const handleAddSuccess = () => {
     setShowAddModal(false);
+    setAddStage(null);
     fetchLeads();
+  };
+
+  const handleModalClose = () => {
+    setShowAddModal(false);
+    setAddStage(null);
+  };
+
+  const handleModalSuccess = () => {
+    handleAddSuccess();
+    setShowAddModal(false);
+    setAddStage(null);
+  };
+
+  // Group leads by stage
+  const leadsByStage = stages.reduce((acc, stage) => {
+    acc[stage.key] = leads.filter((l) => l.stage === stage.key);
+    return acc;
+  }, {} as Record<string, any[]>);
+
+  // Handle drag end
+  const onDragEnd = async (result: any) => {
+    const { source, destination, draggableId } = result;
+    if (!destination || source.droppableId === destination.droppableId) return;
+
+    // Optimistically update UI
+    setLeads((prevLeads) =>
+      prevLeads.map((lead) =>
+        lead.id === draggableId
+          ? { ...lead, stage: destination.droppableId }
+          : lead
+      )
+    );
+
+    // Persist change to DB
+    try {
+      await fetch(`/api/leads/${draggableId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stage: destination.droppableId }),
+      });
+      fetchLeads(); // Refresh to ensure consistency
+    } catch (err) {
+      alert("Failed to update lead stage");
+      fetchLeads();
+    }
   };
 
   return (
@@ -80,44 +130,15 @@ export default function LeadPipeline() {
           >
             Manage Leads
           </button>
-          {/* Notification Bell Icon with Red Dot */}
-          <div className="relative">
-            <button
-              className="p-2 rounded-full hover:bg-gray-100"
-              title="Notifications"
-            >
-              <svg
-                width="22"
-                height="22"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-            <span className="absolute top-1 right-1 block w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-          </div>
-          {/* Profile Avatar with Initials */}
-          <div
-            className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-lg ml-2 border border-blue-300"
-            title="Profile"
-          >
-            JS
-          </div>
+          <NotificationDropdown leads={leads} />
+          <ProfileDropdown />
         </div>
       </div>
       <LeadFormModal
-        open={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onSuccess={handleAddSuccess}
+        open={showAddModal || !!addStage}
+        onClose={handleModalClose}
+        onSuccess={handleModalSuccess}
+        defaultStage={addStage}
       />
       <div className="px-8 py-6">
         <h2 className="text-2xl font-bold mb-6">Lead Pipeline</h2>
@@ -126,91 +147,115 @@ export default function LeadPipeline() {
         ) : error ? (
           <div className="text-red-500">{error}</div>
         ) : (
-          <div className="flex gap-4 overflow-x-auto">
-            {stages.map((stage) => {
-              const stageLeads = leads.filter((l) => l.stage === stage.key);
-              return (
-                <div
-                  key={stage.key}
-                  className={`flex-1 min-w-[320px] ${stage.color} rounded-lg p-4 ${stage.border} border`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-lg">{stage.label}</span>
-                    <span className="bg-white px-2 py-1 rounded text-xs font-bold border">
-                      {stageLeads.length}
-                    </span>
-                    <button className="ml-2 text-xl font-bold text-gray-400">
-                      +
-                    </button>
-                  </div>
-                  <div className="space-y-4 max-h-[60vh] overflow-y-auto">
-                    {stageLeads.map((lead) => (
-                      <div
-                        key={lead.id}
-                        className="bg-white rounded-lg p-4 shadow border"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-semibold text-md">
-                              {lead.name}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {lead.company}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {lead.email}
-                            </div>
-                          </div>
-                          <span
-                            className="text-blue-700 text-xl cursor-pointer"
-                            title="LinkedIn"
-                          >
-                            <a
-                              href={lead.linkedIn}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <svg
-                                width="20"
-                                height="20"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                              >
-                                <path d="M16 8a6 6 0 11-12 0 6 6 0 0112 0z" />
-                              </svg>
-                            </a>
+          <DragDropContext onDragEnd={onDragEnd}>
+            <div className="flex gap-4 overflow-x-auto">
+              {stages.map((stage) => (
+                <Droppable droppableId={stage.key} key={stage.key}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={`flex-1 min-w-[320px] ${
+                        stage.color
+                      } rounded-lg p-4 ${
+                        stage.border
+                      } border transition-shadow ${
+                        snapshot.isDraggingOver ? "shadow-lg" : ""
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-semibold text-lg flex items-center">
+                          {stage.label}
+                          <span className="ml-2 bg-white px-2 py-1 rounded text-xs font-bold border">
+                            {leadsByStage[stage.key]?.length || 0}
                           </span>
-                        </div>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {lead.tags &&
-                            lead.tags.map((tag: string, i: number) => (
-                              <span
-                                key={i}
-                                className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-semibold border border-blue-200"
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                        </div>
-                        <div className="mt-2">
-                          <div className="font-semibold text-sm">Notes</div>
-                          <div className="text-xs text-gray-600 mb-1">
-                            {lead.notes || "No notes"}
-                          </div>
-                          <div className="font-semibold text-sm">
-                            Next Follow Up
-                          </div>
-                          <div className="text-xs text-gray-600 mb-1">
-                            {lead.nextFollowUp || "-"}
-                          </div>
-                        </div>
+                        </span>
+                        <button
+                          className="ml-2 text-xl font-bold text-gray-400"
+                          onClick={() => setAddStage(stage.key)}
+                        >
+                          +
+                        </button>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                      <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+                        {leadsByStage[stage.key]?.map((lead, idx) => (
+                          <Draggable
+                            draggableId={lead.id}
+                            index={idx}
+                            key={lead.id}
+                          >
+                            {(provided, snapshot) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className={`bg-white rounded-lg p-4 shadow border flex flex-col transition-shadow ${
+                                  snapshot.isDragging
+                                    ? "ring-2 ring-blue-400"
+                                    : ""
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <div className="font-semibold text-md">
+                                      {lead.name}
+                                    </div>
+                                    <div className="text-sm text-gray-500">
+                                      {lead.company}
+                                    </div>
+                                    <div className="text-sm text-gray-500">
+                                      {lead.email}
+                                    </div>
+                                  </div>
+                                  {lead.linkedIn && (
+                                    <a
+                                      href={lead.linkedIn}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-50 transition-colors"
+                                      title="View LinkedIn Profile"
+                                    >
+                                      <Linkedin className="h-5 w-5" />
+                                    </a>
+                                  )}
+                                </div>
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                  {lead.tags &&
+                                    lead.tags.map((tag: string, i: number) => (
+                                      <span
+                                        key={i}
+                                        className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-semibold border border-blue-200"
+                                      >
+                                        {tag}
+                                      </span>
+                                    ))}
+                                </div>
+                                <div className="mt-2">
+                                  <div className="font-semibold text-sm">
+                                    Notes
+                                  </div>
+                                  <div className="text-xs text-gray-600 mb-1">
+                                    {lead.notes || "No notes"}
+                                  </div>
+                                  <div className="font-semibold text-sm">
+                                    Next Follow Up
+                                  </div>
+                                  <div className="text-xs text-gray-600 mb-1">
+                                    {lead.nextFollowUp || "-"}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    </div>
+                  )}
+                </Droppable>
+              ))}
+            </div>
+          </DragDropContext>
         )}
       </div>
     </div>

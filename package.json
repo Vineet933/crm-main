@@ -16,6 +16,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@hello-pangea/dnd": "^18.0.1",
     "@prisma/client": "^6.8.2",
     "lucide-react": "^0.344.0",
     "mongodb": "^6.16.0",

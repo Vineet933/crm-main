@@ -23,18 +23,19 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   const data = await req.json();
+  const updateData: any = {};
+  if (data.stage) updateData.stage = data.stage;
+  if (data.name) updateData.name = data.name;
+  if (data.email) updateData.email = data.email;
+  if (data.company) updateData.company = data.company;
+  if (data.linkedIn) updateData.linkedIn = data.linkedIn;
+  if (data.tags) updateData.tags = data.tags;
+  if (data.notes) updateData.notes = data.notes;
+  if (data.nextFollowUp) updateData.nextFollowUp = data.nextFollowUp;
+
   const lead = await prisma.lead.update({
     where: { id: params.id },
-    data: {
-      name: data.name,
-      email: data.email,
-      company: data.company,
-      status: data.status as Stage,
-      linkedin: data.linkedin,
-      tags: data.tags,
-      notes: data.notes,
-      nextFollowUp: data.nextFollowUp,
-    },
+    data: updateData,
   });
   return NextResponse.json(lead);
 }
