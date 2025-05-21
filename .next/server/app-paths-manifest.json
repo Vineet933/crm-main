@@ -1,5 +1,6 @@
 {
   "/api/leads/route": "app/api/leads/route.js",
   "/api/leads/[id]/route": "app/api/leads/[id]/route.js",
-  "/page": "app/page.js"
+  "/page": "app/page.js",
+  "/manage-leads/page": "app/manage-leads/page.js"
 }

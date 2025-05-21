@@ -22,22 +22,43 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const data = await req.json();
-  const updateData: any = {};
-  if (data.stage) updateData.stage = data.stage;
-  if (data.name) updateData.name = data.name;
-  if (data.email) updateData.email = data.email;
-  if (data.company) updateData.company = data.company;
-  if (data.linkedIn) updateData.linkedIn = data.linkedIn;
-  if (data.tags) updateData.tags = data.tags;
-  if (data.notes) updateData.notes = data.notes;
-  if (data.nextFollowUp) updateData.nextFollowUp = data.nextFollowUp;
+  try {
+    const data = await req.json();
+    
+    // Check if lead exists
+    const existingLead = await prisma.lead.findUnique({
+      where: { id: params.id },
+    });
 
-  const lead = await prisma.lead.update({
-    where: { id: params.id },
-    data: updateData,
-  });
-  return NextResponse.json(lead);
+    if (!existingLead) {
+      return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+    }
+
+    const updateData: any = {
+      name: data.name,
+      email: data.email,
+      company: data.company,
+      linkedIn: data.linkedIn,
+      notes: data.notes,
+      tags: data.tags,
+      stage: data.stage,
+      nextFollowUp: data.nextFollowUp ? new Date(data.nextFollowUp) : null,
+    };
+
+    const lead = await prisma.lead.update({
+      where: { id: params.id },
+      data: updateData,
+      include: { conversations: true },
+    });
+
+    return NextResponse.json(lead);
+  } catch (error) {
+    console.error("Error updating lead:", error);
+    return NextResponse.json(
+      { error: "Failed to update lead" },
+      { status: 500 }
+    );
+  }
 }
 
 // DELETE /api/leads/[id] - Delete a lead

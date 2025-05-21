@@ -99,6 +99,15 @@ export default function LeadPipeline() {
     }
   };
 
+  const formatDate = (date: string | Date | null | undefined) => {
+    if (!date) return "-";
+    const d = new Date(date);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Top Bar */}
@@ -241,7 +250,7 @@ export default function LeadPipeline() {
                                     Next Follow Up
                                   </div>
                                   <div className="text-xs text-gray-600 mb-1">
-                                    {lead.nextFollowUp || "-"}
+                                    {formatDate(lead.nextFollowUp)}
                                   </div>
                                 </div>
                               </div>

@@ -16,6 +16,11 @@
       "static/chunks/main-app.js",
       "static/chunks/app/api/leads/route.js"
     ],
+    "/manage-leads/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/manage-leads/page.js"
+    ],
     "/api/leads/[id]/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",

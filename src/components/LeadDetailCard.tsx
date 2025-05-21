@@ -1,6 +1,6 @@
-import React from 'react';
-import { X, Linkedin, Tag, Calendar, MessageSquare } from 'lucide-react';
-import { Lead } from '../types';
+import React from "react";
+import { X, Linkedin, Tag, Calendar, MessageSquare } from "lucide-react";
+import { Lead } from "../types";
 
 interface LeadDetailCardProps {
   lead: Lead;
@@ -10,11 +10,22 @@ interface LeadDetailCardProps {
 export default function LeadDetailCard({ lead, onClose }: LeadDetailCardProps) {
   // Get the latest follow-up date from conversations
   const latestFollowUp = lead.conversations?.reduce((latest, conv) => {
-    if (conv.reminder && (!latest || new Date(conv.reminder) > new Date(latest))) {
+    if (
+      conv.reminder &&
+      (!latest || new Date(conv.reminder) > new Date(latest))
+    ) {
       return conv.reminder;
     }
     return latest;
   }, undefined as string | undefined);
+
+  const formatDate = (date: Date | string) => {
+    const d = new Date(date);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
@@ -35,26 +46,39 @@ export default function LeadDetailCard({ lead, onClose }: LeadDetailCardProps) {
             <h3 className="text-lg font-semibold mb-2">Basic Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-500">Name</label>
+                <label className="block text-sm font-medium text-gray-500">
+                  Name
+                </label>
                 <p className="mt-1">{lead.name}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-500">Email</label>
+                <label className="block text-sm font-medium text-gray-500">
+                  Email
+                </label>
                 <p className="mt-1">{lead.email}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-500">Company</label>
+                <label className="block text-sm font-medium text-gray-500">
+                  Company
+                </label>
                 <p className="mt-1">{lead.company}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-500">Stage</label>
+                <label className="block text-sm font-medium text-gray-500">
+                  Stage
+                </label>
                 <p className="mt-1">
-                  <span className={`inline-block px-2 py-1 rounded-full text-sm ${
-                    lead.stage === 'NEW' ? 'bg-blue-100 text-blue-800' :
-                    lead.stage === 'CONTACTED' ? 'bg-yellow-100 text-yellow-800' :
-                    lead.stage === 'CONVERTED' ? 'bg-green-100 text-green-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
+                  <span
+                    className={`inline-block px-2 py-1 rounded-full text-sm ${
+                      lead.stage === "NEW"
+                        ? "bg-blue-100 text-blue-800"
+                        : lead.stage === "CONTACTED"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : lead.stage === "CONVERTED"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
                     {lead.stage}
                   </span>
                 </p>
@@ -102,7 +126,7 @@ export default function LeadDetailCard({ lead, onClose }: LeadDetailCardProps) {
               <h3 className="text-lg font-semibold mb-2">Next Follow-up</h3>
               <div className="inline-flex items-center text-gray-700">
                 <Calendar className="h-5 w-5 mr-2" />
-                {new Date(latestFollowUp).toLocaleDateString()}
+                {formatDate(latestFollowUp)}
               </div>
             </div>
           )}
@@ -118,7 +142,9 @@ export default function LeadDetailCard({ lead, onClose }: LeadDetailCardProps) {
           {/* Conversations */}
           {lead.conversations && lead.conversations.length > 0 && (
             <div>
-              <h3 className="text-lg font-semibold mb-2">Recent Conversations</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                Recent Conversations
+              </h3>
               <div className="space-y-3">
                 {lead.conversations.slice(0, 5).map((conversation) => (
                   <div
@@ -129,15 +155,19 @@ export default function LeadDetailCard({ lead, onClose }: LeadDetailCardProps) {
                       <MessageSquare className="h-5 w-5 text-gray-400 mr-2 mt-0.5" />
                       <div className="flex-1">
                         <div className="flex justify-between items-start">
-                          <span className="font-medium capitalize">{conversation.type}</span>
+                          <span className="font-medium capitalize">
+                            {conversation.type}
+                          </span>
                           <span className="text-sm text-gray-500">
-                            {new Date(conversation.timestamp).toLocaleDateString()}
+                            {formatDate(conversation.timestamp)}
                           </span>
                         </div>
-                        <p className="text-gray-700 mt-1">{conversation.content}</p>
+                        <p className="text-gray-700 mt-1">
+                          {conversation.content}
+                        </p>
                         {conversation.reminder && (
                           <div className="mt-2 text-sm text-gray-500">
-                            Follow-up: {new Date(conversation.reminder).toLocaleDateString()}
+                            Follow-up: {formatDate(conversation.reminder)}
                           </div>
                         )}
                       </div>
@@ -151,4 +181,4 @@ export default function LeadDetailCard({ lead, onClose }: LeadDetailCardProps) {
       </div>
     </div>
   );
-} 
+}

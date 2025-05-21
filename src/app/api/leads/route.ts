@@ -73,20 +73,9 @@ export async function POST(req: NextRequest) {
         notes: data.notes?.trim() || "",
         tags: data.tags || [],
         stage: data.stage as Stage,
+        nextFollowUp: data.nextFollowUp && !isNaN(Date.parse(data.nextFollowUp)) ? new Date(data.nextFollowUp) : undefined,
       },
     });
-
-    // If there's a nextFollowUp, create a conversation for it
-    if (data.nextFollowUp) {
-      await prisma.conversation.create({
-        data: {
-          leadId: lead.id,
-          type: "follow-up",
-          content: "Initial follow-up scheduled",
-          reminder: new Date(data.nextFollowUp),
-        },
-      });
-    }
 
     return NextResponse.json(lead, {
       status: 201,
@@ -139,6 +128,7 @@ export async function PUT(req: Request) {
         notes: body.notes,
         tags: body.tags,
         stage: body.stage,
+        nextFollowUp: body.nextFollowUp ? new Date(body.nextFollowUp) : undefined,
       },
       include: { conversations: true },
     });

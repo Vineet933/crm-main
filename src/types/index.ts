@@ -9,6 +9,7 @@ export interface Lead {
   notes?: string;
   tags: string[];
   stage: Stage;
+  nextFollowUp?: Date;
   createdAt: Date;
   updatedAt: Date;
   conversations?: Conversation[];
